@@ -1,1 +1,1 @@
-# omeregecetinkaya2.github.io
+# omerege.github.io
