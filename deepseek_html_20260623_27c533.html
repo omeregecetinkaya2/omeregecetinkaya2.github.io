@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Duru RNG - Rebirth Sistemi</title>
+    <link rel="manifest" href="data:application/json,{}">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: #0a0a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 12px; }
+        #app {
+            max-width: 480px; width: 100%; background: #141428; border-radius: 32px; padding: 20px 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8); border: 1px solid #2a2a4a; color: white;
+            position: relative; overflow: hidden; min-height: 500px;
+        }
+        #app::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 40%, rgba(255,170,51,0.03), transparent 60%), radial-gradient(circle at 70% 60%, rgba(51,204,255,0.03), transparent 60%); pointer-events: none; z-index: 0; }
+        #app > * { position: relative; z-index: 1; }
+
+        /* ===== BUTONLAR ===== */
+        .btn {
+            position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 14px 28px; border: none; border-radius: 60px; font-size: 16px; font-weight: 600;
+            letter-spacing: 0.5px; cursor: pointer; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            touch-action: manipulation; background: rgba(255,255,255,0.05); color: #fff;
+            backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+            overflow: hidden; min-height: 52px; min-width: 48px; flex-shrink: 0;
+        }
+        .btn:active { transform: scale(0.94) !important; transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .btn:disabled { opacity: 0.4; transform: scale(0.96) !important; cursor: not-allowed; box-shadow: none; }
+        .btn-primary { background: linear-gradient(135deg, #ffaa33, #ff8800); color: #1a1a2e; border: none; box-shadow: 0 4px 30px rgba(255,170,51,0.25); }
+        .btn-secondary { background: rgba(51,204,255,0.08); border: 1px solid rgba(51,204,255,0.25); color: #33ccff; }
+        .btn-green { background: rgba(102,221,136,0.08); border: 1px solid rgba(102,221,136,0.25); color: #66dd88; }
+        .btn-danger { background: rgba(255,51,102,0.08); border: 1px solid rgba(255,51,102,0.25); color: #ff3366; }
+        .btn-purple { background: rgba(204,102,255,0.08); border: 1px solid rgba(204,102,255,0.25); color: #cc66ff; }
+        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.06); color: #888; }
+        .btn-sm { padding: 8px 16px; font-size: 12px; min-height: 36px; min-width: 36px; border-radius: 40px; }
+        .btn-lg { padding: 18px 36px; font-size: 20px; min-height: 64px; border-radius: 80px; }
+        .btn-block { width: 100%; justify-content: center; }
+        .btn-ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.25); transform: scale(0); animation: rippleSoft 0.7s ease-out forwards; pointer-events: none; }
+        @keyframes rippleSoft { 0% { transform: scale(0); opacity: 0.7; } 100% { transform: scale(4); opacity: 0; } }
+
+        /* ===== AVATAR ===== */
+        #avatarSection {
+            background: rgba(14,14,34,0.4); backdrop-filter: blur(8px);
+            border-radius: 24px; padding: 16px; margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.04);
+            display: flex; align-items: center; gap: 16px;
+        }
+        #avatarBox {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #2a2a4a, #0a0a1a);
+            border: 2px solid #ffaa33;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; position: relative; flex-shrink: 0;
+            box-shadow: 0 0 30px rgba(255,170,51,0.1);
+        }
+        #avatarBox .avatar-level {
+            position: absolute; bottom: -6px; right: -6px;
+            background: #ffaa33; color: #1a1a2e; font-size: 11px; font-weight: 700;
+            border-radius: 50%; width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid #141428;
+        }
+        #avatarBox .avatar-rebirth {
+            position: absolute; top: -8px; left: -8px;
+            background: #cc66ff; color: #fff; font-size: 10px; font-weight: 700;
+            border-radius: 50%; width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid #141428;
+            box-shadow: 0 0 20px rgba(204,102,255,0.4);
+        }
+        #avatarInfo { flex: 1; }
+        #avatarInfo .avatar-name { font-size: 18px; font-weight: 700; color: #fff; }
+        #avatarInfo .avatar-power { font-size: 14px; color: #ffaa33; font-weight: 600; }
+        #avatarInfo .avatar-stats { font-size: 12px; color: #888; display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+        #avatarInfo .avatar-stats span { display: flex; align-items: center; gap: 4px; }
+        .rebirth-badge { color: #cc66ff; font-weight: 700; }
+
+        /* ===== REBIRTH MENÜSÜ ===== */
+        #rebirthScreen {
+            display: none; flex-direction: column; align-items: center;
+            min-height: 460px; padding: 10px; gap: 12px;
+        }
+        #rebirthScreen.active { display: flex; }
+        #rebirthScreen h2 { color: #cc66ff; font-size: 28px; }
+        #rebirthScreen .rebirth-info {
+            background: rgba(204,102,255,0.05); border-radius: 20px;
+            padding: 16px; width: 100%; border: 1px solid rgba(204,102,255,0.1);
+            text-align: center;
+        }
+        #rebirthScreen .rebirth-info .big-number {
+            font-size: 42px; font-weight: 900; color: #cc66ff;
+        }
+        #rebirthScreen .rebirth-info .label { color: #888; font-size: 14px; }
+        #rebirthScreen .rebirth-requirements {
+            width: 100%; background: rgba(14,14,34,0.4); border-radius: 16px;
+            padding: 12px; border: 1px solid rgba(255,255,255,0.04);
+        }
+        #rebirthScreen .rebirth-requirements .req-item {
+            display: flex; justify-content: space-between; padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 14px;
+        }
+        .req-check { color: #66dd88; }
+        .req-uncheck { color: #ff3366; }
+
+        /* ===== MENÜ ===== */
+        #menuScreen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 460px; gap: 12px; padding: 10px 0;
+        }
+        #menuScreen h1 { text-align: center; font-size: 38px; background: linear-gradient(135deg, #ffaa33, #ff6633); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 2px; font-weight: 900; }
+        #menuScreen .sub { color: #888; font-size: 14px; letter-spacing: 4px; margin-bottom: 4px; }
+        #menuScreen .user-info { color: #88ccff; font-size: 16px; margin: 4px 0; }
+        #menuScreen .user-info .name { color: #ffaa33; font-weight: bold; }
+
+        /* ===== GİRİŞ / KAYIT ===== */
+        #authScreen {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 460px; gap: 12px; padding: 10px;
+        }
+        #authScreen.active { display: flex; }
+        #authScreen h2 { color: #ffaa33; font-size: 28px; }
+        #authScreen .input-group { width: 90%; display: flex; flex-direction: column; gap: 4px; }
+        #authScreen .input-group label { color: #aaa; font-size: 13px; letter-spacing: 1px; }
+        #authScreen .input-group input {
+            padding: 14px 18px; border-radius: 30px; border: 1px solid #3a3a5a;
+            background: #0e0e22; color: white; font-size: 16px; outline: none;
+            transition: 0.2s; width: 100%;
+        }
+        #authScreen .input-group input:focus { border-color: #ffaa33; box-shadow: 0 0 30px rgba(255,170,51,0.08); }
+        .auth-error { color: #ff3366; font-size: 13px; min-height: 20px; text-align: center; }
+        .auth-success { color: #66dd88; font-size: 13px; min-height: 20px; text-align: center; }
+        .auth-tabs { display: flex; gap: 8px; width: 90%; }
+        .auth-tabs button { flex: 1; padding: 12px; border-radius: 30px; border: 2px solid #3a3a5a; background: transparent; color: #aaa; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.25s ease; }
+        .auth-tabs button.active { border-color: #ffaa33; color: #ffaa33; background: rgba(255,170,51,0.06); }
+
+        /* ===== LİDERLİK ===== */
+        #leaderboardScreen {
+            display: none; flex-direction: column; align-items: center;
+            min-height: 460px; padding: 10px; gap: 8px;
+        }
+        #leaderboardScreen.active { display: flex; }
+        #leaderboardScreen h2 { color: #ffaa33; font-size: 28px; }
+        #leaderboardList {
+            width: 100%; max-height: 350px; overflow-y: auto;
+            background: #0e0e22; border-radius: 16px; padding: 8px;
+            border: 1px solid #2a2a4a;
+        }
+        #leaderboardList::-webkit-scrollbar { width: 4px; }
+        #leaderboardList::-webkit-scrollbar-thumb { background: #ffaa33; border-radius: 10px; }
+        .lb-item {
+            display: flex; justify-content: space-between; padding: 8px 12px;
+            border-bottom: 1px solid #1a1a32; font-size: 13px; align-items: center;
+        }
+        .lb-item .rank { color: #ffaa33; font-weight: bold; min-width: 30px; }
+        .lb-item .name { flex: 1; color: #ddd; }
+        .lb-item .score { color: #88ccff; font-weight: 600; margin: 0 4px; }
+        .lb-item .detail { color: #888; font-size: 11px; }
+        .lb-item.me { background: rgba(255,170,51,0.06); border-left: 3px solid #ffaa33; border-radius: 0 12px 12px 0; }
+        .lb-empty { color: #555; text-align: center; padding: 20px; }
+
+        /* ===== OYUN EKRANI ===== */
+        #gameScreen { display: none; }
+        #gameScreen.active { display: block; }
+
+        #topBar {
+            display: flex; justify-content: space-between; background: rgba(14,14,34,0.6); backdrop-filter: blur(12px);
+            border-radius: 20px; padding: 10px 16px; margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.04); font-size: 13px; align-items: center; flex-wrap: wrap; gap: 4px;
+        }
+        #topBar span { display: flex; align-items: center; gap: 4px; opacity: 0.8; }
+        #topBar .gold { color: #ffd700; }
+        #topBar .potion { color: #66dd88; }
+        #topBar strong { color: white; font-weight: 700; }
+
+        #resultBox {
+            background: rgba(26,26,50,0.6); backdrop-filter: blur(12px);
+            border-radius: 24px; padding: 24px 16px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.04); min-height: 170px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: 0.4s ease; margin-bottom: 14px; position: relative; overflow: hidden;
+        }
+        #resultBox .icon { font-size: 64px; line-height: 1; margin-bottom: 4px; }
+        #resultBox .name { font-size: 22px; font-weight: 700; margin: 2px 0; }
+        #resultBox .rarity { font-size: 15px; font-weight: 600; margin: 2px 0; }
+        #resultBox .chance { font-size: 12px; color: #888; margin-top: 2px; }
+        #resultBox .value { font-size: 13px; color: #88ccff; }
+        .rarity-common { color: #aaaaaa; }
+        .rarity-uncommon { color: #66dd88; }
+        .rarity-rare { color: #44aaff; }
+        .rarity-epic { color: #cc66ff; }
+        .rarity-legendary { color: #ffaa33; }
+        .rarity-mythic { color: #ff3366; }
+        .rarity-secret { color: #ff00ff; text-shadow: 0 0 30px #ff00ff, 0 0 60px #ff00ff44; }
+
+        #burstEffect { position: absolute; inset: 0; pointer-events: none; z-index: 5; border-radius: 24px; overflow: hidden; }
+        .burst-particle { position: absolute; border-radius: 50%; animation: burstSoft 0.8s ease-out forwards; }
+        @keyframes burstSoft { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+        .mythic-glow { animation: mythicPulse 0.6s ease-in-out 3; }
+        .secret-glow { animation: secretPulse 0.4s ease-in-out 5; }
+        @keyframes mythicPulse { 0%, 100% { box-shadow: 0 0 30px #ff3366, 0 0 60px #ff336633; } 50% { box-shadow: 0 0 80px #ff3366, 0 0 120px #ff336655; } }
+        @keyframes secretPulse { 0%, 100% { box-shadow: 0 0 40px #ff00ff, 0 0 80px #ff00ff44; } 50% { box-shadow: 0 0 100px #ff00ff, 0 0 160px #ff00ff66, 0 0 220px #ff00ff33; } }
+
+        #cooldownText { text-align: center; font-size: 14px; color: #ffaa33; height: 24px; margin: 4px 0 10px; font-weight: 600; }
+
+        #potionStatus {
+            display: flex; justify-content: space-between; background: rgba(14,14,34,0.5); backdrop-filter: blur(8px);
+            border-radius: 16px; padding: 8px 14px; margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.04); font-size: 12px; color: #aaa; align-items: center; flex-wrap: wrap; gap: 4px;
+        }
+        #potionStatus .active-potion { color: #66dd88; font-weight: 600; }
+
+        .btn-group {
+            display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+        }
+        .btn-group .btn { flex: 1; min-width: 60px; }
+
+        #inventoryPanel {
+            background: rgba(14,14,34,0.4); backdrop-filter: blur(8px);
+            border-radius: 20px; padding: 0 8px; max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease, border 0.4s ease;
+            border: 1px solid transparent; margin-top: 6px;
+        }
+        #inventoryPanel.open { max-height: 450px; padding: 10px 8px; border-color: rgba(255,255,255,0.04); overflow-y: auto; }
+        #inventoryPanel::-webkit-scrollbar { width: 4px; }
+        #inventoryPanel::-webkit-scrollbar-thumb { background: #ffaa33; border-radius: 10px; }
+        .inv-item {
+            display: flex; justify-content: space-between; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 13px; align-items: center;
+        }
+        .inv-item .inv-icon { font-size: 20px; margin-right: 8px; }
+        .inv-item .inv-name { flex: 1; }
+        .inv-item .inv-count { color: #888; font-size: 12px; margin-right: 6px; }
+        .inv-item .inv-val { color: #88ccff; font-size: 11px; margin-right: 8px; }
+        .inv-empty { color: #555; text-align: center; padding: 20px; }
+
+        #shopPanel {
+            background: rgba(14,14,34,0.4); backdrop-filter: blur(8px);
+            border-radius: 20px; padding: 0 8px; max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease, border 0.4s ease;
+            border: 1px solid transparent; margin-top: 6px;
+        }
+        #shopPanel.open { max-height: 450px; padding: 12px 8px; border-color: rgba(255,255,255,0.04); overflow-y: auto; }
+        .shop-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 8px 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px;
+        }
+        .shop-item .shop-info { display: flex; align-items: center; gap: 8px; }
+        .shop-item .shop-info .icon { font-size: 24px; }
+        .shop-item .shop-info .desc { display: flex; flex-direction: column; }
+        .shop-item .shop-info .desc .name { font-weight: 600; }
+        .shop-item .shop-info .desc .detail { font-size: 11px; color: #888; }
+
+        .shop-tab { display: flex; gap: 6px; margin-bottom: 10px; }
+        .shop-tab .btn { flex: 1; padding: 8px; font-size: 12px; min-height: 36px; border-radius: 30px; }
+
+        #allItemsToggle { width: 100%; margin-top: 6px; }
+        #allItemsList { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; font-size: 11px; color: #888; }
+        #allItemsList.open { max-height: 300px; overflow-y: auto; }
+        #allItemsList .item-row { display: flex; justify-content: space-between; padding: 3px 6px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+
+        .footer { text-align: center; font-size: 8px; color: #333; margin-top: 12px; letter-spacing: 2px; }
+
+        @media (max-width: 400px) {
+            #app { padding: 14px; }
+            #resultBox .icon { font-size: 48px; }
+            #resultBox .name { font-size: 18px; }
+            .btn { padding: 12px 20px; font-size: 14px; min-height: 44px; }
+            .btn-lg { padding: 14px 24px; font-size: 18px; min-height: 54px; }
+            .btn-group .btn { font-size: 12px; padding: 10px 12px; }
+            #avatarBox { width: 64px; height: 64px; font-size: 32px; }
+            #avatarBox .avatar-level, #avatarBox .avatar-rebirth { width: 24px; height: 24px; font-size: 9px; }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <!-- MENÜ EKRANI -->
+    <div id="menuScreen">
+        <h1>🎰 Duru RNG</h1>
+        <div class="sub">✦ ŞANSINI DENE ✦</div>
+        <div id="menuUserInfo" class="user-info">👤 <span class="name" id="menuUserName">Misafir</span></div>
+        <button class="btn btn-primary btn-block" id="menuLoginBtn">🔑 Giriş Yap / Kayıt Ol</button>
+        <button class="btn btn-secondary btn-block" id="menuPlayBtn" style="display:none;">▶ OYNA</button>
+        <button class="btn btn-secondary btn-block" id="menuLbBtn" style="display:none;">🏆 Liderlik</button>
+        <button class="btn btn-purple btn-block" id="menuRebirthBtn" style="display:none;">🔄 Rebirth</button>
+        <button class="btn btn-danger btn-block" id="menuLogoutBtn" style="display:none;">🚪 Çıkış Yap</button>
+        <div style="margin-top:6px; font-size:10px; color:#555;">v8.0 • Rebirth Sistemi</div>
+    </div>
+
+    <!-- GİRİŞ / KAYIT EKRANI -->
+    <div id="authScreen">
+        <h2 id="authTitle">🔑 Giriş Yap</h2>
+        <div class="auth-tabs">
+            <button id="authTabLogin" class="active">Giriş</button>
+            <button id="authTabRegister">Kayıt Ol</button>
+        </div>
+        <div class="input-group">
+            <label>👤 Kullanıcı Adı</label>
+            <input type="text" id="authUsername" placeholder="Kullanıcı adınız..." maxlength="20">
+        </div>
+        <div class="input-group">
+            <label>🔒 Şifre</label>
+            <input type="password" id="authPassword" placeholder="Şifreniz..." maxlength="30">
+        </div>
+        <div class="auth-error" id="authError"></div>
+        <div class="auth-success" id="authSuccess"></div>
+        <button class="btn btn-primary btn-block" id="authSubmitBtn">✅ Giriş Yap</button>
+        <button class="btn btn-ghost btn-block" id="authBackBtn">⬅ Geri</button>
+    </div>
+
+    <!-- REBIRTH EKRANI -->
+    <div id="rebirthScreen">
+        <h2>🔄 Rebirth</h2>
+        <div class="rebirth-info">
+            <div class="label">Toplam Rebirth</div>
+            <div class="big-number" id="rebirthCountDisplay">0</div>
+            <div style="margin-top:6px; color:#66dd88;">Kalıcı Şans: +<span id="rebirthPermChance">0</span>%</div>
+        </div>
+        <div class="rebirth-requirements">
+            <div style="font-weight:600; color:#cc66ff; margin-bottom:6px;">⚡ Gereksinimler</div>
+            <div class="req-item"><span>🎲 Toplam Roll</span><span id="reqRolls">0 / 50</span></div>
+            <div class="req-item"><span>🪙 Altın</span><span id="reqGold">0 / 1000</span></div>
+            <div class="req-item"><span>💎 En İyi Eşya Değeri</span><span id="reqBestItem">0 / 100</span></div>
+            <div class="req-item"><span>📦 Toplam Eşya</span><span id="reqItems">0 / 20</span></div>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" id="rebirthBtn">🔄 REBIRTH AT!</button>
+        <button class="btn btn-ghost" id="rebirthBackBtn">⬅ Geri</button>
+    </div>
+
+    <!-- LİDERLİK EKRANI -->
+    <div id="leaderboardScreen">
+        <h2>🏆 Liderlik</h2>
+        <div style="display:flex; gap:6px; width:100%; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" id="lbSortGold">🪙 Altın</button>
+            <button class="btn btn-secondary btn-sm" id="lbSortBest">💎 En İyi Eşya</button>
+            <button class="btn btn-secondary btn-sm" id="lbSortRolls">🎲 Roll</button>
+            <button class="btn btn-secondary btn-sm" id="lbSortPower">⚔️ Güç</button>
+            <button class="btn btn-purple btn-sm" id="lbSortRebirth">🔄 Rebirth</button>
+        </div>
+        <div id="leaderboardList"></div>
+        <button class="btn btn-ghost" id="lbBackBtn" style="padding:8px 24px;">⬅ Geri</button>
+    </div>
+
+    <!-- OYUN EKRANI -->
+    <div id="gameScreen">
+        <button class="btn btn-danger btn-sm" id="menuBackBtn" style="margin-bottom:6px;">🏠 Menü</button>
+
+        <!-- AVATAR -->
+        <div id="avatarSection">
+            <div id="avatarBox">
+                <span id="avatarEmoji">🧑</span>
+                <span class="avatar-level" id="avatarLevel">1</span>
+                <span class="avatar-rebirth" id="avatarRebirth">0</span>
+            </div>
+            <div id="avatarInfo">
+                <div class="avatar-name" id="avatarName">Oyuncu</div>
+                <div class="avatar-power">⚔️ Güç: <span id="avatarPower">0</span> &nbsp;|&nbsp; <span class="rebirth-badge">🔄 <span id="avatarRebirthText">0</span></span></div>
+                <div class="avatar-stats">
+                    <span>💎 Eşya: <span id="avatarItemCount">0</span></span>
+                    <span>👑 En İyi: <span id="avatarBestRarity">-</span></span>
+                    <span>💠 Kalıcı Şans: +<span id="avatarPermChance">0</span>%</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="topBar">
+            <span>🪙 Altın: <strong id="goldAmount">0</strong></span>
+            <span>🧪 İksir: <strong id="potionCount">0</strong></span>
+            <span>💍 Takı: <strong id="equipCount">0/4</strong></span>
+            <span>🎲 Roll: <strong id="rollCountDisplay">0</strong></span>
+        </div>
+
+        <div id="resultBox">
+            <div id="burstEffect"></div>
+            <div class="icon" id="resultIcon">❓</div>
+            <div class="name" id="resultName">Eşya yok</div>
+            <div class="rarity" id="resultRarity">-</div>
+            <div class="value" id="resultValue">Değer: 0</div>
+            <div class="chance" id="resultChance">Çıkma şansı: %0</div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="rollBtn">🎲 ROLL</button>
+        <div id="cooldownText"></div>
+
+        <div id="potionStatus">
+            <span>💫 Aktif İksir: <span class="active-potion" id="activePotionText">Yok</span></span>
+            <span>⏱️ <span id="potionTimer">0:00</span></span>
+            <span>💎 Kalıcı Şans: <span id="permChanceText">+%0</span></span>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-secondary" id="invBtn">📦 Envanter</button>
+            <button class="btn btn-secondary" id="shopBtn">🏪 Market</button>
+            <button class="btn btn-green" id="usePotionBtn">🧪 İksir Kullan</button>
+        </div>
+
+        <div id="inventoryPanel"><div id="inventoryList"></div></div>
+
+        <div id="shopPanel">
+            <div class="shop-tab">
+                <button class="btn btn-secondary btn-sm active" id="shopTabPotion">🧪 İksirler</button>
+                <button class="btn btn-secondary btn-sm" id="shopTabAccessory">💍 Takılar</button>
+            </div>
+            <div id="shopList"></div>
+        </div>
+
+        <button class="btn btn-ghost btn-sm" id="allItemsToggle">📋 Tüm eşyaları göster</button>
+        <div id="allItemsList"></div>
+        <div class="footer">DURU RNG v8.0 • Rebirth Sistemi</div>
+    </div>
+
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // ---------- RIPPLE EFEKTI ----------
+        function addRipple(e) {
+            const btn = e.currentTarget;
+            const rect = btn.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height) * 0.8;
+            const x = (e.clientX || e.touches?.[0]?.clientX || rect.left + rect.width/2) - rect.left - size/2;
+            const y = (e.clientY || e.touches?.[0]?.clientY || rect.top + rect.height/2) - rect.top - size/2;
+            const ripple = document.createElement('span');
+            ripple.className = 'btn-ripple';
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            btn.appendChild(ripple);
+            setTimeout(() => { ripple.remove(); }, 700);
+        }
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('mousedown', addRipple);
+            btn.addEventListener('touchstart', addRipple, { passive: true });
+        });
+
+        // ---------- HESAP SİSTEMİ ----------
+        const ACCOUNTS_KEY = 'duru_rng_accounts_v8';
+        const SESSION_KEY = 'duru_rng_session_v8';
+
+        function migrateOldData() {
+            const oldAccounts = localStorage.getItem('duru_rng_accounts_v7');
+            if (oldAccounts && !localStorage.getItem(ACCOUNTS_KEY)) {
+                let data = JSON.parse(oldAccounts);
+                // Rebirth ekle
+                for (const key in data) {
+                    if (data[key].playerData && !data[key].playerData.rebirthCount) {
+                        data[key].playerData.rebirthCount = 0;
+                        data[key].playerData.rebirthPermChance = 0;
+                    }
+                }
+                localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(data));
+                const oldSession = localStorage.getItem('duru_rng_session_v7');
+                if (oldSession) localStorage.setItem(SESSION_KEY, oldSession);
+                console.log('✅ Eski veriler (v7) yeni sürüme taşındı!');
+            }
+        }
+        migrateOldData();
+
+        function getAccounts() {
+            try { const data = localStorage.getItem(ACCOUNTS_KEY); return data ? JSON.parse(data) : {}; } catch(e) { return {}; }
+        }
+        function saveAccounts(accounts) { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts)); }
+        function getSession() {
+            try { const data = localStorage.getItem(SESSION_KEY); return data ? JSON.parse(data) : null; } catch(e) { return null; }
+        }
+        function saveSession(username, playerData) {
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ username, playerData, timestamp: Date.now() }));
+        }
+        function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+        function getDefaultPlayerData() {
+            return {
+                gold: 0,
+                potions: 0,
+                inventory: {},
+                equippedAccessories: [],
+                activePotion: null,
+                potionTimer: null,
+                lastPotionMultiplier: 2,
+                rollCount: 0,
+                bestItemValue: 0,
+                avatarEmoji: '🧑',
+                avatarName: 'Oyuncu',
+                avatarLevel: 1,
+                avatarPower: 0,
+                rebirthCount: 0,
+                rebirthPermChance: 0
+            };
+        }
+
+        function registerUser(username, password) {
+            const accounts = getAccounts();
+            if (accounts[username]) return { success: false, error: '❌ Bu kullanıcı adı zaten alınmış!' };
+            const newData = getDefaultPlayerData();
+            newData.avatarName = username;
+            const firstLoot = rollLootInternal();
+            newData.inventory[firstLoot.name] = { ...firstLoot, count: 1 };
+            newData.bestItemValue = firstLoot.value;
+            accounts[username] = { password, playerData: newData, createdAt: Date.now() };
+            saveAccounts(accounts);
+            return { success: true, data: newData };
+        }
+
+        function loginUser(username, password) {
+            const accounts = getAccounts();
+            if (!accounts[username]) return { success: false, error: '❌ Hesap bulunamadı!' };
+            if (accounts[username].password !== password) return { success: false, error: '❌ Yanlış şifre!' };
+            return { success: true, data: accounts[username].playerData };
+        }
+
+        // ---------- EŞYA TABLOSU ----------
+        const LOOT_TABLE = {
+            common: { name: 'Yaygın', color: '#aaaaaa', chance: 35, items: [
+                { name: 'Taş Parçası', icon: '🪨', value: 5, power: 1 },
+                { name: 'Yaprak', icon: '🍃', value: 4, power: 1 },
+                { name: 'Kum Tanesi', icon: '🏖️', value: 3, power: 1 },
+                { name: 'Su Damlası', icon: '💧', value: 6, power: 2 },
+                { name: 'Odun', icon: '🪵', value: 7, power: 2 },
+                { name: 'Çamur', icon: '🫧', value: 4, power: 1 },
+                { name: 'Tüy', icon: '🪶', value: 8, power: 2 },
+                { name: 'Kabuk', icon: '🐚', value: 6, power: 2 }
+            ]},
+            uncommon: { name: 'Sıradışı', color: '#66dd88', chance: 25, items: [
+                { name: 'Gümüş Yüzük', icon: '💍', value: 30, power: 5 },
+                { name: 'Kristal', icon: '🔮', value: 35, power: 6 },
+                { name: 'Yıldız Tozu', icon: '✨', value: 28, power: 5 },
+                { name: 'Sihirli Taş', icon: '🪄', value: 40, power: 7 },
+                { name: 'Eski Parşömen', icon: '📜', value: 32, power: 6 },
+                { name: 'Kemik', icon: '🦴', value: 25, power: 5 }
+            ]},
+            rare: { name: 'Nadir', color: '#44aaff', chance: 15, items: [
+                { name: 'Altın Kolye', icon: '📿', value: 70, power: 12 },
+                { name: 'Ejderha Pul', icon: '🐉', value: 80, power: 14 },
+                { name: 'Gökkuşağı Taşı', icon: '🌈', value: 75, power: 13 },
+                { name: 'Eski Madalyon', icon: '🏅', value: 85, power: 15 },
+                { name: 'Karanlık Kristal', icon: '🖤', value: 90, power: 16 },
+                { name: 'Ateş Ruhu', icon: '🔥', value: 78, power: 14 }
+            ]},
+            epic: { name: 'Epik', color: '#cc66ff', chance: 8, items: [
+                { name: 'Büyülü Kılıç', icon: '⚔️', value: 150, power: 25 },
+                { name: 'Yıldız Tacı', icon: '👑', value: 180, power: 30 },
+                { name: 'Kozmik Yumurta', icon: '🥚', value: 160, power: 28 },
+                { name: 'Ruh Taşı', icon: '💠', value: 200, power: 35 },
+                { name: 'Kadim Kitap', icon: '📖', value: 170, power: 30 },
+                { name: 'Zaman Kumu', icon: '⏳', value: 190, power: 32 }
+            ]},
+            legendary: { name: 'Efsanevi', color: '#ffaa33', chance: 3.5, items: [
+                { name: 'Ejderha Kılıcı', icon: '🗡️', value: 350, power: 50 },
+                { name: 'Altın Zırh', icon: '🛡️', value: 400, power: 55 },
+                { name: 'Ölümsüzlük İksiri', icon: '🧪', value: 380, power: 52 },
+                { name: 'Yıldız Tozu Tacı', icon: '🌟', value: 420, power: 60 },
+                { name: 'Karanlık Pelerin', icon: '🌑', value: 360, power: 50 }
+            ]},
+            mythic: { name: 'Mistik', color: '#ff3366', chance: 0.8, items: [
+                { name: 'Kozmik Kılıç', icon: '🌌', value: 1000, power: 120 },
+                { name: 'Tanrı Tacı', icon: '👁️', value: 1200, power: 150 },
+                { name: 'Sonsuzluk Kristali', icon: '💎', value: 1500, power: 180 },
+                { name: 'Gökkuşağı Ejderhası', icon: '🌈🐉', value: 1300, power: 160 }
+            ]},
+            secret: { name: 'Gizemli', color: '#ff00ff', chance: 0.1, items: [
+                { name: 'Gizemli Yüzük', icon: '🟣', value: 3000, power: 300 },
+                { name: 'Kozmik Taç', icon: '👑🌌', value: 3500, power: 350 },
+                { name: 'Sonsuzluk Kapısı', icon: '🚪✨', value: 4000, power: 400 },
+                { name: 'Yaratılış Kristali', icon: '💎🌟', value: 5000, power: 500 }
+            ]}
+        };
+
+        const RARITY_KEYS = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'secret'];
+        const RARITY_NAMES = { common: 'Yaygın', uncommon: 'Sıradışı', rare: 'Nadir', epic: 'Epik', legendary: 'Efsanevi', mythic: 'Mistik', secret: 'Gizemli' };
+
+        const ACCESSORY_SHOP = [
+            { id: 'acc1', name: 'Yüzük (Şans +2%)', icon: '💍', price: 500, chanceBonus: 2, rarity: 'common' },
+            { id: 'acc2', name: 'Kolye (Şans +4%)', icon: '📿', price: 1200, chanceBonus: 4, rarity: 'uncommon' },
+            { id: 'acc3', name: 'Küpe (Şans +6%)', icon: '👂', price: 2500, chanceBonus: 6, rarity: 'rare' },
+            { id: 'acc4', name: 'Taç (Şans +10%)', icon: '👑', price: 5000, chanceBonus: 10, rarity: 'epic' },
+            { id: 'acc5', name: 'Asa (Şans +15%)', icon: '🪄', price: 10000, chanceBonus: 15, rarity: 'legendary' },
+            { id: 'acc6', name: 'Kozmik Taç (Şans +20%)', icon: '🌌👑', price: 25000, chanceBonus: 20, rarity: 'mythic' }
+        ];
+
+        const POTION_SHOP = [
+            { name: 'Şans İksiri (2x)', icon: '🧪', price: 50, multiplier: 2, duration: 180 },
+            { name: 'Şans İksiri (3x)', icon: '🧪', price: 120, multiplier: 3, duration: 180 },
+            { name: 'Şans İksiri (5x)', icon: '🧪', price: 300, multiplier: 5, duration: 180 },
+            { name: 'Şans İksiri (10x)', icon: '🧪', price: 800, multiplier: 10, duration: 180 },
+            { name: 'Şans İksiri (20x)', icon: '🧪', price: 2000, multiplier: 20, duration: 180 },
+            { name: 'Şans İksiri (50x)', icon: '🧪', price: 6000, multiplier: 50, duration: 180 },
+            { name: 'Şans İksiri (100x)', icon: '🧪', price: 15000, multiplier: 100, duration: 180 }
+        ];
+
+        // ---------- OYUNCU ----------
+        let currentUser = null;
+        let player = getDefaultPlayerData();
+        let lastPotionMultiplier = 2;
+        let isCooldown = false;
+        let cooldownTimer = null;
+        let shopCooldown = {};
+        let lbSortMode = 'power';
+
+        // ---------- REBIRTH SİSTEMİ ----------
+        function getRebirthRequirements() {
+            const rebirthCount = player.rebirthCount || 0;
+            const baseRolls = 50;
+            const baseGold = 1000;
+            const baseBestItem = 100;
+            const baseItems = 20;
+            const multiplier = 1 + rebirthCount * 0.5; // Her rebirth %50 daha zor
+            return {
+                rolls: Math.floor(baseRolls * multiplier),
+                gold: Math.floor(baseGold * multiplier),
+                bestItem: Math.floor(baseBestItem * multiplier),
+                items: Math.floor(baseItems * multiplier)
+            };
+        }
+
+        function canRebirth() {
+            const req = getRebirthRequirements();
+            const totalItems = Object.keys(player.inventory || {}).reduce((sum, k) => sum + (player.inventory[k]?.count || 0), 0);
+            return {
+                rolls: (player.rollCount || 0) >= req.rolls,
+                gold: (player.gold || 0) >= req.gold,
+                bestItem: (player.bestItemValue || 0) >= req.bestItem,
+                items: totalItems >= req.items,
+                all: (player.rollCount || 0) >= req.rolls && (player.gold || 0) >= req.gold && (player.bestItemValue || 0) >= req.bestItem && totalItems >= req.items
+            };
+        }
+
+        function performRebirth() {
+            const check = canRebirth();
+            if (!check.all) {
+                showTempMessage('❌ Tüm gereksinimleri karşılamalısın!');
+                return;
+            }
+            if (!confirm('⚠️ Rebirth atacaksın! Tüm eşyaların, altın ve iksirlerin sıfırlanacak. Devam et?')) return;
+
+            // Rebirth bonusu: +%2 kalıcı şans
+            const bonus = 2;
+            player.rebirthCount = (player.rebirthCount || 0) + 1;
+            player.rebirthPermChance = (player.rebirthPermChance || 0) + bonus;
+
+            // Sıfırlama (eşyalar, altın, iksirler)
+            player.gold = 0;
+            player.potions = 0;
+            player.inventory = {};
+            player.equippedAccessories = [];
+            player.bestItemValue = 0;
+            player.rollCount = 0;
+            player.avatarLevel = 1;
+            player.activePotion = null;
+            if (player.potionTimer) {
+                clearInterval(player.potionTimer);
+                player.potionTimer = null;
+            }
+
+            // İlk eşyayı ver
+            const firstLoot = rollLootInternal();
+            player.inventory[firstLoot.name] = { ...firstLoot, count: 1 };
+            player.bestItemValue = firstLoot.value;
+
+            saveAndUpdate();
+            showTempMessage(`🔄 Rebirth başarılı! +%${bonus} kalıcı şans kazandın!`);
+            updateRebirthUI();
+        }
+
+        // ---------- LOOT ----------
+        function rollLootInternal() {
+            const adjustedChances = {};
+            let totalChance = 0;
+            for (const key of RARITY_KEYS) {
+                adjustedChances[key] = LOOT_TABLE[key].chance;
+                totalChance += LOOT_TABLE[key].chance;
+            }
+            let roll2 = Math.random() * totalChance;
+            let cum = 0;
+            let selectedRarity = 'common';
+            for (const key of RARITY_KEYS) {
+                cum += adjustedChances[key];
+                if (roll2 <= cum) { selectedRarity = key; break; }
+            }
+            const rarityData = LOOT_TABLE[selectedRarity];
+            const item = rarityData.items[Math.floor(Math.random() * rarityData.items.length)];
+            return { rarity: selectedRarity, rarityName: rarityData.name, color: rarityData.color, chance: rarityData.chance, ...item };
+        }
+
+        function calculateAvatarPower() {
+            let power = 0;
+            for (const key in player.inventory) {
+                const item = player.inventory[key];
+                for (const rk of RARITY_KEYS) {
+                    const found = LOOT_TABLE[rk].items.find(it => it.name === item.name);
+                    if (found) { power += (found.power || 0) * item.count; break; }
+                }
+            }
+            if (player.equippedAccessories) {
+                for (const acc of player.equippedAccessories) power += acc.chanceBonus || 0;
+            }
+            power += (player.avatarLevel || 1) * 2;
+            return power;
+        }
+
+        function updateAvatar() {
+            const power = calculateAvatarPower();
+            player.avatarPower = power;
+            document.getElementById('avatarEmoji').textContent = player.avatarEmoji || '🧑';
+            document.getElementById('avatarName').textContent = player.avatarName || 'Oyuncu';
+            document.getElementById('avatarPower').textContent = power;
+            document.getElementById('avatarLevel').textContent = player.avatarLevel || 1;
+            document.getElementById('avatarRebirth').textContent = player.rebirthCount || 0;
+            document.getElementById('avatarRebirthText').textContent = player.rebirthCount || 0;
+            document.getElementById('avatarPermChance').textContent = player.rebirthPermChance || 0;
+
+            let bestRarity = '-';
+            let bestIdx = -1;
+            for (const key in player.inventory) {
+                const item = player.inventory[key];
+                for (let i = 0; i < RARITY_KEYS.length; i++) {
+                    const rk = RARITY_KEYS[i];
+                    if (LOOT_TABLE[rk].items.some(it => it.name === item.name)) {
+                        if (i > bestIdx) { bestIdx = i; bestRarity = RARITY_NAMES[rk]; }
+                        break;
+                    }
+                }
+            }
+            document.getElementById('avatarBestRarity').textContent = bestRarity;
+            let totalItems = 0;
+            for (const key in player.inventory) totalItems += player.inventory[key].count;
+            document.getElementById('avatarItemCount').textContent = totalItems;
+        }
+
+        // ---------- ENVANTER ----------
+        function addToInventory(item) {
+            const key = item.name;
+            if (player.inventory[key]) { player.inventory[key].count += 1; }
+            else { player.inventory[key] = { ...item, count: 1 }; }
+            if (item.value > (player.bestItemValue || 0)) player.bestItemValue = item.value;
+            let totalItems = 0;
+            for (const k in player.inventory) totalItems += player.inventory[k].count;
+            player.avatarLevel = Math.floor(totalItems / 10) + 1;
+            saveAndUpdate();
+        }
+
+        function sellItem(itemName) {
+            const item = player.inventory[itemName];
+            if (!item) return;
+            const goldEarned = Math.max(1, Math.floor(item.value / 4));
+            const totalGold = goldEarned * item.count;
+            player.gold += totalGold;
+            delete player.inventory[itemName];
+            let totalItems = 0;
+            for (const k in player.inventory) totalItems += player.inventory[k].count;
+            player.avatarLevel = Math.floor(totalItems / 10) + 1;
+            saveAndUpdate();
+            showTempMessage(`💰 +${totalGold} altın (${item.name} x${item.count} satıldı)`);
+        }
+
+        function getPermChance() {
+            let total = (player.rebirthPermChance || 0);
+            if (player.equippedAccessories) {
+                for (const acc of player.equippedAccessories) total += acc.chanceBonus || 0;
+            }
+            return total;
+        }
+
+        function equipAccessory(acc) {
+            if (!player.equippedAccessories) player.equippedAccessories = [];
+            if (player.equippedAccessories.length >= 4) {
+                showTempMessage('❌ En fazla 4 takı takabilirsin!');
+                return false;
+            }
+            if (player.equippedAccessories.some(a => a.id === acc.id)) {
+                showTempMessage('❌ Bu takı zaten takılı!');
+                return false;
+            }
+            const key = acc.name;
+            if (!player.inventory[key] || player.inventory[key].count < 1) {
+                showTempMessage('❌ Bu takı envanterinde yok!');
+                return false;
+            }
+            player.inventory[key].count -= 1;
+            if (player.inventory[key].count <= 0) delete player.inventory[key];
+            player.equippedAccessories.push({ ...acc });
+            saveAndUpdate();
+            showTempMessage(`💍 ${acc.name} takıldı! (${getPermChance()}% kalıcı şans)`);
+            return true;
+        }
+
+        function unequipAccessory(index) {
+            if (!player.equippedAccessories) player.equippedAccessories = [];
+            const acc = player.equippedAccessories[index];
+            if (!acc) return;
+            const key = acc.name;
+            if (player.inventory[key]) { player.inventory[key].count += 1; }
+            else { player.inventory[key] = { ...acc, count: 1 }; }
+            player.equippedAccessories.splice(index, 1);
+            saveAndUpdate();
+            showTempMessage(`💍 ${acc.name} çıkarıldı!`);
+        }
+
+        function usePotion() {
+            if (player.potions <= 0) {
+                showTempMessage('❌ İksirin yok! Marketten satın al.');
+                return;
+            }
+            if (player.activePotion) {
+                showTempMessage('⏳ Zaten aktif bir iksir var!');
+                return;
+            }
+            const multiplier = lastPotionMultiplier || 2;
+            player.potions -= 1;
+            player.activePotion = { multiplier, remaining: 180 };
+            startPotionTimer();
+            saveAndUpdate();
+            showTempMessage(`🧪 ${multiplier}x Şans İksiri aktif! (3 dk)`);
+        }
+
+        function startPotionTimer() {
+            if (player.potionTimer) clearInterval(player.potionTimer);
+            player.potionTimer = setInterval(() => {
+                if (!player.activePotion) {
+                    clearInterval(player.potionTimer);
+                    player.potionTimer = null;
+                    return;
+                }
+                player.activePotion.remaining -= 1;
+                if (player.activePotion.remaining <= 0) {
+                    player.activePotion = null;
+                    clearInterval(player.potionTimer);
+                    player.potionTimer = null;
+                    showTempMessage('⏳ İksir süresi doldu!');
+                }
+                saveAndUpdate();
+            }, 1000);
+        }
+
+        function getPotionMultiplier() {
+            if (player.activePotion) return player.activePotion.multiplier;
+            return 1;
+        }
+
+        function rollLootWithStats() {
+            const potionMult = getPotionMultiplier();
+            const permChance = getPermChance();
+            const adjustedChances = {};
+            let totalChance = 0;
+            for (const key of RARITY_KEYS) {
+                let chance = LOOT_TABLE[key].chance;
+                if (permChance > 0) {
+                    const idx = RARITY_KEYS.indexOf(key);
+                    if (idx >= 2) chance = chance * (1 + permChance / 100);
+                }
+                if (potionMult > 1) {
+                    const idx = RARITY_KEYS.indexOf(key);
+                    if (idx >= 2) chance = chance * potionMult;
+                }
+                adjustedChances[key] = chance;
+                totalChance += chance;
+            }
+            let roll2 = Math.random() * totalChance;
+            let cum = 0;
+            let selectedRarity = 'common';
+            for (const key of RARITY_KEYS) {
+                cum += adjustedChances[key];
+                if (roll2 <= cum) { selectedRarity = key; break; }
+            }
+            const rarityData = LOOT_TABLE[selectedRarity];
+            const item = rarityData.items[Math.floor(Math.random() * rarityData.items.length)];
+            return { rarity: selectedRarity, rarityName: rarityData.name, color: rarityData.color, chance: rarityData.chance, ...item };
+        }
+
+        function performRoll() {
+            if (isCooldown) return;
+            const loot = rollLootWithStats();
+            player.rollCount = (player.rollCount || 0) + 1;
+            addToInventory(loot);
+
+            document.getElementById('resultIcon').textContent = loot.icon;
+            document.getElementById('resultName').textContent = loot.name;
+            document.getElementById('resultRarity').textContent = `✦ ${loot.rarityName}`;
+            document.getElementById('resultRarity').className = `rarity rarity-${loot.rarity}`;
+            document.getElementById('resultValue').textContent = `Değer: ${loot.value}`;
+            document.getElementById('resultChance').textContent = `Çıkma şansı: %${loot.chance}`;
+
+            const box = document.getElementById('resultBox');
+            box.classList.remove('mythic-glow', 'secret-glow');
+            if (loot.rarity === 'mythic') {
+                box.classList.add('mythic-glow');
+                createBurstEffect('#ff3366');
+                setTimeout(() => box.classList.remove('mythic-glow'), 2000);
+            } else if (loot.rarity === 'secret') {
+                box.classList.add('secret-glow');
+                createSecretEffect();
+                setTimeout(() => box.classList.remove('secret-glow'), 3000);
+            } else {
+                createBurstEffect(loot.color);
+            }
+
+            isCooldown = true;
+            const btn = document.getElementById('rollBtn');
+            btn.disabled = true;
+            const cdText = document.getElementById('cooldownText');
+            let remaining = 3;
+            cdText.textContent = `⏳ ${remaining} sn`;
+            if (cooldownTimer) clearInterval(cooldownTimer);
+            cooldownTimer = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(cooldownTimer); cooldownTimer = null;
+                    cdText.textContent = ''; btn.disabled = false; isCooldown = false;
+                } else { cdText.textContent = `⏳ ${remaining} sn`; }
+            }, 1000);
+            saveAndUpdate();
+        }
+
+        function createBurstEffect(color) {
+            const container = document.getElementById('burstEffect');
+            container.innerHTML = '';
+            const colors = [color, '#ffaa33', '#ffffff', '#ff6633', '#33ccff'];
+            for (let i = 0; i < 24; i++) {
+                const p = document.createElement('div');
+                p.className = 'burst-particle';
+                const size = 4 + Math.random() * 12;
+                const angle = Math.random() * 2 * Math.PI;
+                const dist = 40 + Math.random() * 80;
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+                p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+                p.style.left = (40 + Math.random() * 20) + '%';
+                p.style.top = (40 + Math.random() * 20) + '%';
+                container.appendChild(p);
+            }
+            setTimeout(() => { container.innerHTML = ''; }, 700);
+        }
+
+        function createSecretEffect() {
+            const container = document.getElementById('burstEffect');
+            container.innerHTML = '';
+            const colors = ['#ff00ff', '#ff3366', '#ffaa33', '#33ccff', '#ffffff', '#ff6600'];
+            for (let i = 0; i < 50; i++) {
+                const p = document.createElement('div');
+                p.className = 'burst-particle';
+                const size = 4 + Math.random() * 16;
+                const angle = Math.random() * 2 * Math.PI;
+                const dist = 50 + Math.random() * 120;
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+                p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+                p.style.left = (30 + Math.random() * 40) + '%';
+                p.style.top = (30 + Math.random() * 40) + '%';
+                p.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                container.appendChild(p);
+            }
+            setTimeout(() => { container.innerHTML = ''; }, 1000);
+        }
+
+        let tempMsgTimeout = null;
+        function showTempMessage(msg) {
+            const el = document.getElementById('cooldownText');
+            el.textContent = msg;
+            if (tempMsgTimeout) clearTimeout(tempMsgTimeout);
+            tempMsgTimeout = setTimeout(() => {
+                if (!isCooldown) el.textContent = '';
+            }, 3000);
+        }
+
+        function saveAndUpdate() {
+            if (currentUser) {
+                const accounts = getAccounts();
+                if (accounts[currentUser]) {
+                    accounts[currentUser].playerData = player;
+                    saveAccounts(accounts);
+                    saveSession(currentUser, player);
+                }
+            }
+            updateUI();
+        }
+
+        function getLeaderboardData() {
+            const accounts = getAccounts();
+            const result = [];
+            for (const [username, data] of Object.entries(accounts)) {
+                const pd = data.playerData || {};
+                let power = 0;
+                for (const key in pd.inventory || {}) {
+                    const item = pd.inventory[key];
+                    for (const rk of RARITY_KEYS) {
+                        const found = LOOT_TABLE[rk].items.find(it => it.name === item.name);
+                        if (found) { power += (found.power || 0) * item.count; break; }
+                    }
+                }
+                if (pd.equippedAccessories) {
+                    for (const acc of pd.equippedAccessories) power += acc.chanceBonus || 0;
+                }
+                power += (pd.avatarLevel || 1) * 2;
+                result.push({
+                    username,
+                    gold: pd.gold || 0,
+                    bestItemValue: pd.bestItemValue || 0,
+                    rollCount: pd.rollCount || 0,
+                    power: power,
+                    rebirthCount: pd.rebirthCount || 0,
+                    inventoryCount: Object.keys(pd.inventory || {}).reduce((sum, k) => sum + (pd.inventory[k]?.count || 0), 0)
+                });
+            }
+            return result;
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboardList');
+            const data = getLeaderboardData();
+            if (data.length === 0) {
+                list.innerHTML = '<div class="lb-empty">📭 Henüz oyuncu yok. İlk sen ol!</div>';
+                return;
+            }
+            let sorted = [...data];
+            if (lbSortMode === 'gold') sorted.sort((a, b) => b.gold - a.gold);
+            else if (lbSortMode === 'best') sorted.sort((a, b) => b.bestItemValue - a.bestItemValue);
+            else if (lbSortMode === 'rolls') sorted.sort((a, b) => b.rollCount - a.rollCount);
+            else if (lbSortMode === 'power') sorted.sort((a, b) => b.power - a.power);
+            else if (lbSortMode === 'rebirth') sorted.sort((a, b) => b.rebirthCount - a.rebirthCount);
+
+            let html = '';
+            sorted.forEach((item, index) => {
+                const isMe = (item.username === currentUser);
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index+1}`;
+                let detail = '';
+                if (lbSortMode === 'gold') detail = `🪙 ${item.gold}`;
+                else if (lbSortMode === 'best') detail = `💎 ${item.bestItemValue}`;
+                else if (lbSortMode === 'rolls') detail = `🎲 ${item.rollCount}`;
+                else if (lbSortMode === 'power') detail = `⚔️ ${item.power}`;
+                else if (lbSortMode === 'rebirth') detail = `🔄 ${item.rebirthCount}`;
+                html += `<div class="lb-item ${isMe ? 'me' : ''}">
+                            <span class="rank">${medal}</span>
+                            <span class="name">${isMe ? '⭐ ' : ''}${item.username}</span>
+                            <span class="score">${detail}</span>
+                            <span class="detail">📦 ${item.inventoryCount}</span>
+                        </div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function updateUI() {
+            document.getElementById('goldAmount').textContent = player.gold || 0;
+            document.getElementById('potionCount').textContent = player.potions || 0;
+            document.getElementById('equipCount').textContent = `${(player.equippedAccessories || []).length}/4`;
+            document.getElementById('permChanceText').textContent = `+%${getPermChance()}`;
+            document.getElementById('rollCountDisplay').textContent = player.rollCount || 0;
+
+            if (player.activePotion) {
+                const mins = Math.floor(player.activePotion.remaining / 60);
+                const secs = player.activePotion.remaining % 60;
+                document.getElementById('activePotionText').textContent = `${player.activePotion.multiplier}x`;
+                document.getElementById('potionTimer').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            } else {
+                document.getElementById('activePotionText').textContent = 'Yok';
+                document.getElementById('potionTimer').textContent = '0:00';
+            }
+            updateAvatar();
+            renderInventory();
+            renderShop();
+            updateRebirthUI();
+        }
+
+        function updateRebirthUI() {
+            const req = getRebirthRequirements();
+            const check = canRebirth();
+            const totalItems = Object.keys(player.inventory || {}).reduce((sum, k) => sum + (player.inventory[k]?.count || 0), 0);
+            
+            document.getElementById('rebirthCountDisplay').textContent = player.rebirthCount || 0;
+            document.getElementById('rebirthPermChance').textContent = player.rebirthPermChance || 0;
+            
+            document.getElementById('reqRolls').innerHTML = `${player.rollCount || 0} / ${req.rolls} <span class="${check.rolls ? 'req-check' : 'req-uncheck'}">${check.rolls ? '✅' : '❌'}</span>`;
+            document.getElementById('reqGold').innerHTML = `${player.gold || 0} / ${req.gold} <span class="${check.gold ? 'req-check' : 'req-uncheck'}">${check.gold ? '✅' : '❌'}</span>`;
+            document.getElementById('reqBestItem').innerHTML = `${player.bestItemValue || 0} / ${req.bestItem} <span class="${check.bestItem ? 'req-check' : 'req-uncheck'}">${check.bestItem ? '✅' : '❌'}</span>`;
+            document.getElementById('reqItems').innerHTML = `${totalItems} / ${req.items} <span class="${check.items ? 'req-check' : 'req-uncheck'}">${check.items ? '✅' : '❌'}</span>`;
+            
+            document.getElementById('rebirthBtn').disabled = !check.all;
+        }
+
+        function renderInventory() {
+            const list = document.getElementById('inventoryList');
+            const keys = Object.keys(player.inventory || {});
+            if (keys.length === 0) {
+                list.innerHTML = '<div class="inv-empty">📭 Envanter boş</div>';
+                return;
+            }
+            let html = '';
+            const sorted = keys.sort((a, b) => {
+                const getRarityIndex = (name) => {
+                    for (let i = 0; i < RARITY_KEYS.length; i++) {
+                        const rk = RARITY_KEYS[i];
+                        if (LOOT_TABLE[rk].items.some(it => it.name === name)) return i;
+                    }
+                    return 0;
+                };
+                return getRarityIndex(b) - getRarityIndex(a);
+            });
+            for (const key of sorted) {
+                const item = player.inventory[key];
+                const sellGold = Math.max(1, Math.floor(item.value / 4));
+                const isAccessory = ACCESSORY_SHOP.some(a => a.name === item.name);
+                const isEquipped = (player.equippedAccessories || []).some(a => a.name === item.name);
+                let power = 0;
+                for (const rk of RARITY_KEYS) {
+                    const found = LOOT_TABLE[rk].items.find(it => it.name === item.name);
+                    if (found) { power = found.power || 0; break; }
+                }
+                html += `<div class="inv-item">
+                            <span class="inv-icon">${item.icon}</span>
+                            <span class="inv-name">${item.name} <span style="color:#888;font-size:10px;">⚔️${power}</span></span>
+                            <span class="inv-val">${item.value}p</span>
+                            <span class="inv-count">x${item.count}</span>
+                            ${isAccessory && !isEquipped ? `<button class="btn btn-secondary btn-sm equip-btn" data-item="${item.name}">Tak</button>` : ''}
+                            ${isEquipped ? `<button class="btn btn-danger btn-sm unequip-btn" data-item="${item.name}">Çıkar</button>` : ''}
+                            <button class="btn btn-danger btn-sm sell-btn" data-item="${item.name}">🪙${sellGold}</button>
+                        </div>`;
+            }
+            list.innerHTML = html;
+
+            list.querySelectorAll('.sell-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sellItem(this.dataset.item);
+                });
+            });
+            list.querySelectorAll('.equip-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const acc = ACCESSORY_SHOP.find(a => a.name === this.dataset.item);
+                    if (acc) equipAccessory(acc);
+                });
+            });
+            list.querySelectorAll('.unequip-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const idx = (player.equippedAccessories || []).findIndex(a => a.name === this.dataset.item);
+                    if (idx !== -1) unequipAccessory(idx);
+                });
+            });
+        }
+
+        let shopTab = 'potion';
+
+        function renderShop() {
+            const list = document.getElementById('shopList');
+            let html = '';
+            if (shopTab === 'potion') {
+                for (const item of POTION_SHOP) {
+                    const canBuy = (player.gold || 0) >= item.price;
+                    html += `<div class="shop-item">
+                                <div class="shop-info">
+                                    <span class="icon">${item.icon}</span>
+                                    <div class="desc">
+                                        <span class="name">${item.name}</span>
+                                        <span class="detail">${item.multiplier}x şans • ${item.duration}s</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm buy-btn" data-price="${item.price}" data-mult="${item.multiplier}" ${canBuy ? '' : 'disabled'}>
+                                    🪙 ${item.price}
+                                </button>
+                            </div>`;
+                }
+            } else {
+                for (const acc of ACCESSORY_SHOP) {
+                    const canBuy = (player.gold || 0) >= acc.price;
+                    const cooldownRemaining = shopCooldown[acc.id] || 0;
+                    const cooldownText = cooldownRemaining > 0 ? ` (${Math.ceil(cooldownRemaining/60)}dk)` : '';
+                    const rarityColor = acc.rarity === 'common' ? '#aaa' : acc.rarity === 'uncommon' ? '#66dd88' : acc.rarity === 'rare' ? '#44aaff' : acc.rarity === 'epic' ? '#cc66ff' : acc.rarity === 'legendary' ? '#ffaa33' : '#ff3366';
+                    html += `<div class="shop-item">
+                                <div class="shop-info">
+                                    <span class="icon">${acc.icon}</span>
+                                    <div class="desc">
+                                        <span class="name" style="color:${rarityColor}">${acc.name}</span>
+                                        <span class="detail">${acc.chanceBonus}% kalıcı şans • ${acc.rarity}${cooldownText}</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm buy-btn" data-id="${acc.id}" data-price="${acc.price}" ${canBuy ? '' : 'disabled'}>
+                                    🪙 ${acc.price}
+                                </button>
+                            </div>`;
+                }
+            }
+            list.innerHTML = html;
+
+            list.querySelectorAll('.buy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (shopTab === 'potion') {
+                        const price = parseInt(this.dataset.price);
+                        const mult = parseInt(this.dataset.mult);
+                        if ((player.gold || 0) >= price) {
+                            player.gold -= price;
+                            player.potions += 1;
+                            lastPotionMultiplier = mult;
+                            saveAndUpdate();
+                            showTempMessage(`🧪 ${mult}x İksir satın alındı! (${player.potions} adet)`);
+                        }
+                    } else {
+                        const id = this.dataset.id;
+                        const acc = ACCESSORY_SHOP.find(a => a.id === id);
+                        if (acc) {
+                            if ((player.gold || 0) < acc.price) {
+                                showTempMessage('❌ Yeterli altın yok!');
+                                return;
+                            }
+                            if (shopCooldown[acc.id] && shopCooldown[acc.id] > 0) {
+                                const remaining = Math.ceil(shopCooldown[acc.id] / 60);
+                                showTempMessage(`⏳ ${remaining} dakika beklemelisin!`);
+                                return;
+                            }
+                            player.gold -= acc.price;
+                            const key = acc.name;
+                            if (player.inventory[key]) { player.inventory[key].count += 1; }
+                            else { player.inventory[key] = { ...acc, count: 1, value: acc.price }; }
+                            shopCooldown[acc.id] = 300;
+                            saveAndUpdate();
+                            showTempMessage(`💍 ${acc.name} satın alındı! (5 dk bekleme)`);
+                        }
+                    }
+                });
+            });
+        }
+
+        // ---------- COOLDOWN ----------
+        setInterval(() => {
+            for (const id in shopCooldown) {
+                if (shopCooldown[id] > 0) {
+                    shopCooldown[id] -= 1;
+                    if (shopCooldown[id] < 0) shopCooldown[id] = 0;
+                }
+            }
+            if (currentUser) updateUI();
+        }, 1000);
+
+        // ---------- EKRAN GEÇİŞLERİ ----------
+        const menuScreen = document.getElementById('menuScreen');
+        const authScreen = document.getElementById('authScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const leaderboardScreen = document.getElementById('leaderboardScreen');
+        const rebirthScreen = document.getElementById('rebirthScreen');
+        let authMode = 'login';
+
+        function showMenu() {
+            menuScreen.style.display = 'flex';
+            authScreen.classList.remove('active');
+            gameScreen.classList.remove('active');
+            leaderboardScreen.classList.remove('active');
+            rebirthScreen.classList.remove('active');
+            const session = getSession();
+            if (session) {
+                document.getElementById('menuUserName').textContent = session.username;
+                document.getElementById('menuLoginBtn').style.display = 'none';
+                document.getElementById('menuPlayBtn').style.display = 'block';
+                document.getElementById('menuLbBtn').style.display = 'block';
+                document.getElementById('menuRebirthBtn').style.display = 'block';
+                document.getElementById('menuLogoutBtn').style.display = 'block';
+            } else {
+                document.getElementById('menuUserName').textContent = 'Misafir';
+                document.getElementById('menuLoginBtn').style.display = 'block';
+                document.getElementById('menuPlayBtn').style.display = 'none';
+                document.getElementById('menuLbBtn').style.display = 'none';
+                document.getElementById('menuRebirthBtn').style.display = 'none';
+                document.getElementById('menuLogoutBtn').style.display = 'none';
+            }
+        }
+
+        function showAuth() {
+            menuScreen.style.display = 'none';
+            authScreen.classList.add('active');
+            gameScreen.classList.remove('active');
+            leaderboardScreen.classList.remove('active');
+            rebirthScreen.classList.remove('active');
+            document.getElementById('authError').textContent = '';
+            document.getElementById('authSuccess').textContent = '';
+            document.getElementById('authUsername').value = '';
+            document.getElementById('authPassword').value = '';
+            setAuthMode('login');
+        }
+
+        function setAuthMode(mode) {
+            authMode = mode;
+            if (mode === 'login') {
+                document.getElementById('authTitle').textContent = '🔑 Giriş Yap';
+                document.getElementById('authSubmitBtn').textContent = '✅ Giriş Yap';
+                document.getElementById('authTabLogin').classList.add('active');
+                document.getElementById('authTabRegister').classList.remove('active');
+            } else {
+                document.getElementById('authTitle').textContent = '📝 Kayıt Ol';
+                document.getElementById('authSubmitBtn').textContent = '✅ Kayıt Ol';
+                document.getElementById('authTabRegister').classList.add('active');
+                document.getElementById('authTabLogin').classList.remove('active');
+            }
+        }
+
+        function showGame() {
+            menuScreen.style.display = 'none';
+            authScreen.classList.remove('active');
+            gameScreen.classList.add('active');
+            leaderboardScreen.classList.remove('active');
+            rebirthScreen.classList.remove('active');
+            const session = getSession();
+            if (session) {
+                currentUser = session.username;
+                player = session.playerData || getDefaultPlayerData();
+                if (!player.equippedAccessories) player.equippedAccessories = [];
+                if (!player.inventory) player.inventory = {};
+                if (!player.rebirthCount) player.rebirthCount = 0;
+                if (!player.rebirthPermChance) player.rebirthPermChance = 0;
+                if (player.activePotion) startPotionTimer();
+                updateUI();
+            }
+        }
+
+        function showLeaderboard() {
+            menuScreen.style.display = 'none';
+            authScreen.classList.remove('active');
+            gameScreen.classList.remove('active');
+            leaderboardScreen.classList.add('active');
+            rebirthScreen.classList.remove('active');
+            renderLeaderboard();
+        }
+
+        function showRebirth() {
+            menuScreen.style.display = 'none';
+            authScreen.classList.remove('active');
+            gameScreen.classList.remove('active');
+            leaderboardScreen.classList.remove('active');
+            rebirthScreen.classList.add('active');
+            updateRebirthUI();
+        }
+
+        function handleAuthSubmit() {
+            const username = document.getElementById('authUsername').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            if (!username || !password) {
+                document.getElementById('authError').textContent = '❌ Kullanıcı adı ve şifre gerekli!';
+                document.getElementById('authSuccess').textContent = '';
+                return;
+            }
+            if (username.length < 3 || password.length < 3) {
+                document.getElementById('authError').textContent = '❌ En az 3 karakter girmelisin!';
+                return;
+            }
+
+            if (authMode === 'register') {
+                const result = registerUser(username, password);
+                if (result.success) {
+                    document.getElementById('authError').textContent = '';
+                    document.getElementById('authSuccess').textContent = '✅ Hesap oluşturuldu! Şimdi giriş yap.';
+                    setAuthMode('login');
+                    document.getElementById('authUsername').value = username;
+                    document.getElementById('authPassword').value = '';
+                } else {
+                    document.getElementById('authError').textContent = result.error;
+                    document.getElementById('authSuccess').textContent = '';
+                }
+            } else {
+                const result = loginUser(username, password);
+                if (result.success) {
+                    saveSession(username, result.data);
+                    currentUser = username;
+                    player = result.data;
+                    if (!player.equippedAccessories) player.equippedAccessories = [];
+                    if (!player.inventory) player.inventory = {};
+                    if (!player.rebirthCount) player.rebirthCount = 0;
+                    if (!player.rebirthPermChance) player.rebirthPermChance = 0;
+                    if (player.activePotion) startPotionTimer();
+                    document.getElementById('authError').textContent = '';
+                    document.getElementById('authSuccess').textContent = '✅ Giriş başarılı!';
+                    setTimeout(() => {
+                        showMenu();
+                        document.getElementById('menuUserName').textContent = username;
+                        document.getElementById('menuLoginBtn').style.display = 'none';
+                        document.getElementById('menuPlayBtn').style.display = 'block';
+                        document.getElementById('menuLbBtn').style.display = 'block';
+                        document.getElementById('menuRebirthBtn').style.display = 'block';
+                        document.getElementById('menuLogoutBtn').style.display = 'block';
+                    }, 500);
+                } else {
+                    document.getElementById('authError').textContent = result.error;
+                    document.getElementById('authSuccess').textContent = '';
+                }
+            }
+        }
+
+        // ---------- BUTON EVENTLERİ ----------
+        document.getElementById('menuLoginBtn').addEventListener('click', showAuth);
+        document.getElementById('authBackBtn').addEventListener('click', showMenu);
+        document.getElementById('authSubmitBtn').addEventListener('click', handleAuthSubmit);
+        document.getElementById('authTabLogin').addEventListener('click', () => setAuthMode('login'));
+        document.getElementById('authTabRegister').addEventListener('click', () => setAuthMode('register'));
+        document.getElementById('menuPlayBtn').addEventListener('click', showGame);
+        document.getElementById('menuLbBtn').addEventListener('click', showLeaderboard);
+        document.getElementById('menuRebirthBtn').addEventListener('click', showRebirth);
+        document.getElementById('lbBackBtn').addEventListener('click', showMenu);
+        document.getElementById('rebirthBackBtn').addEventListener('click', showMenu);
+        document.getElementById('rebirthBtn').addEventListener('click', performRebirth);
+        document.getElementById('menuLogoutBtn').addEventListener('click', function() {
+            if (confirm('Çıkış yapmak istediğine emin misin?')) {
+                clearSession();
+                currentUser = null;
+                player = getDefaultPlayerData();
+                showMenu();
+            }
+        });
+        document.getElementById('lbSortGold').addEventListener('click', () => { lbSortMode = 'gold'; renderLeaderboard(); });
+        document.getElementById('lbSortBest').addEventListener('click', () => { lbSortMode = 'best'; renderLeaderboard(); });
+        document.getElementById('lbSortRolls').addEventListener('click', () => { lbSortMode = 'rolls'; renderLeaderboard(); });
+        document.getElementById('lbSortPower').addEventListener('click', () => { lbSortMode = 'power'; renderLeaderboard(); });
+        document.getElementById('lbSortRebirth').addEventListener('click', () => { lbSortMode = 'rebirth'; renderLeaderboard(); });
+        document.getElementById('menuBackBtn').addEventListener('click', function() {
+            if (currentUser) saveAndUpdate();
+            showMenu();
+        });
+
+        document.getElementById('authPassword').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') handleAuthSubmit();
+        });
+        document.getElementById('authUsername').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') document.getElementById('authPassword').focus();
+        });
+
+        // ---------- OYUN İÇİ BUTONLAR ----------
+        document.getElementById('rollBtn').addEventListener('click', performRoll);
+        document.getElementById('rollBtn').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            performRoll();
+        }, { passive: false });
+
+        document.getElementById('usePotionBtn').addEventListener('click', usePotion);
+
+        let invOpen = false, shopOpen = false;
+        document.getElementById('invBtn').addEventListener('click', function() {
+            const panel = document.getElementById('inventoryPanel');
+            invOpen = !invOpen;
+            panel.classList.toggle('open');
+            this.textContent = invOpen ? '📦 Envanteri Gizle' : '📦 Envanter';
+            if (invOpen && shopOpen) {
+                document.getElementById('shopPanel').classList.remove('open');
+                shopOpen = false;
+                document.getElementById('shopBtn').textContent = '🏪 Market';
+            }
+        });
+
+        document.getElementById('shopBtn').addEventListener('click', function() {
+            const panel = document.getElementById('shopPanel');
+            shopOpen = !shopOpen;
+            panel.classList.toggle('open');
+            this.textContent = shopOpen ? '🏪 Marketi Gizle' : '🏪 Market';
+            if (shopOpen && invOpen) {
+                document.getElementById('inventoryPanel').classList.remove('open');
+                invOpen = false;
+                document.getElementById('invBtn').textContent = '📦 Envanter';
+            }
+            if (shopOpen) renderShop();
+        });
+
+        document.getElementById('shopTabPotion').addEventListener('click', function() {
+            shopTab = 'potion';
+            this.classList.add('active');
+            document.getElementById('shopTabAccessory').classList.remove('active');
+            renderShop();
+        });
+        document.getElementById('shopTabAccessory').addEventListener('click', function() {
+            shopTab = 'accessory';
+            this.classList.add('active');
+            document.getElementById('shopTabPotion').classList.remove('active');
+            renderShop();
+        });
+
+        let allItemsOpen = false;
+        document.getElementById('allItemsToggle').addEventListener('click', function() {
+            const list = document.getElementById('allItemsList');
+            allItemsOpen = !allItemsOpen;
+            list.classList.toggle('open');
+            this.textContent = allItemsOpen ? '📋 Tüm eşyaları gizle' : '📋 Tüm eşyaları göster';
+            if (allItemsOpen) {
+                const container = document.getElementById('allItemsList');
+                let html = '';
+                for (const rk of RARITY_KEYS) {
+                    const data = LOOT_TABLE[rk];
+                    for (const item of data.items) {
+                        html += `<div class="item-row" style="color:${data.color}"><span>${item.icon} ${item.name}</span><span>${data.name} • %${data.chance}</span></div>`;
+                    }
+                }
+                container.innerHTML = html;
+            }
+        });
+
+        // ---------- BAŞLANGIÇ ----------
+        const session = getSession();
+        if (session) {
+            currentUser = session.username;
+            player = session.playerData || getDefaultPlayerData();
+            if (!player.equippedAccessories) player.equippedAccessories = [];
+            if (!player.inventory) player.inventory = {};
+            if (!player.rebirthCount) player.rebirthCount = 0;
+            if (!player.rebirthPermChance) player.rebirthPermChance = 0;
+            document.getElementById('menuUserName').textContent = session.username;
+            document.getElementById('menuLoginBtn').style.display = 'none';
+            document.getElementById('menuPlayBtn').style.display = 'block';
+            document.getElementById('menuLbBtn').style.display = 'block';
+            document.getElementById('menuRebirthBtn').style.display = 'block';
+            document.getElementById('menuLogoutBtn').style.display = 'block';
+            if (player.activePotion) startPotionTimer();
+        }
+
+        showMenu();
+        console.log('🎰 Duru RNG v8.0 - Rebirth Sistemi eklendi!');
+        console.log('🔄 Her rebirth %2 kalıcı şans verir, gereksinimler her seferinde artar.');
+        console.log('👑 Avatarınızda rebirth sayısı gözükür.');
+    })();
+</script>
+</body>
+</html>
