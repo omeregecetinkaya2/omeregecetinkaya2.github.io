@@ -1,0 +1,1 @@
+# omeregecetinkaya2.github.io
